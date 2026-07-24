@@ -9,6 +9,7 @@ const CHARACTERS = {
     dress: "#3154a5",
     skin: "#f2c9c7",
     roomImage: "assets/backgrounds/rooms/Asteria-房間.png?v=2",
+    portraitHeight: 720,
     opening: "來得正好。我剛泡了茶，要一起坐坐嗎？",
     expressions: {
       "待機": "assets/characters/asteria/Asteria-待機.png?v=3",
@@ -29,6 +30,7 @@ const CHARACTERS = {
     dress: "#5b2ca0",
     skin: "#e8b9bd",
     roomImage: "assets/backgrounds/rooms/Nyx-房間.png?v=1",
+    portraitHeight: 730,
     opening: "喔，你來啦。今天過得怎樣？",
     expressions: {
       "待機": "assets/characters/nyx/Nyx-待機.png?v=2",
@@ -48,7 +50,8 @@ const CHARACTERS = {
     hair: "#eff5ff",
     dress: "#e6e9f3",
     skin: "#f4d0bd",
-    opening: "……來了？坐。",
+    portraitHeight: 760,
+    opening: "......。",
     expressions: {
       "待機": "assets/characters/lumi/Lumi-待機.png?v=2",
       "喜": "assets/characters/lumi/Lumi-待機.png?v=2",

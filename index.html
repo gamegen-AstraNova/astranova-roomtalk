@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AstraNova｜RoomTalk</title>
-  <link rel="stylesheet" href="styles.css?v=33">
+  <link rel="stylesheet" href="styles.css?v=45">
 </head>
 <body>
   <main class="app-shell">
     <header class="site-header">
       <div>
         <p class="eyebrow">AstraNova</p>
-        <h1>RoomTalk</h1>
+        <h1><span class="title-room">Room</span><span class="title-talk">Talk</span></h1>
       </div>
       <div class="header-actions">
         <button class="button button-quiet audio-toggle" id="bgm-button"
@@ -39,21 +39,25 @@
   </main>
 
   <div id="memory-overlay" class="overlay hidden">
-    <section class="modal-panel">
-      <button class="button button-quiet close-button" id="close-memory">關閉</button>
-      <p class="eyebrow">MEMORY</p>
-      <h2>外出回想</h2>
-      <p class="helper-text">完成過的外出事件會永久收錄在這裡。</p>
-      <div id="memory-list" class="memory-list"></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="memory-title">
+      <button class="button button-quiet close-button" id="close-memory"
+        type="button" aria-label="關閉事件回想" title="關閉">×</button>
+      <div class="modal-content">
+        <header class="modal-heading">
+          <p class="eyebrow">MEMORY</p>
+          <h2 id="memory-title">事件回想</h2>
+          <p class="helper-text">完成過的事件會永久收錄在這裡。</p>
+        </header>
+        <div id="memory-list" class="memory-list"></div>
+      </div>
     </section>
   </div>
 
   <audio id="bgm" src="assets/audio/AstraNova-BGM.mp3?v=1" loop preload="auto"></audio>
 
-  <script src="data.js?v=14"></script>
+  <script src="data.js?v=21"></script>
   <script src="content-asteria.js?v=5"></script>
   <script src="content-nyx.js?v=5"></script>
-  <script src="content-lumi.js?v=5"></script>
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>

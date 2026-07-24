@@ -153,6 +153,10 @@ function normalizeState() {
     game.dates[name] ||= [];
     game.used[name] ||= {};
     for (const relation of RELATION_KEYS) game.used[name][relation] ||= [];
+    if (!LOCKED_CHARACTERS.has(name)) continue;
+    game.affection[name] = 0;
+    game.dates[name] = [];
+    for (const relation of RELATION_KEYS) game.used[name][relation] = [];
   }
 }
 
@@ -167,12 +171,15 @@ function handleKonamiCode(event) {
   if (key !== KONAMI_CODE[konamiIndex]) { konamiIndex = key === KONAMI_CODE[0] ? 1 : 0; return; }
   if (++konamiIndex !== KONAMI_CODE.length) return;
   konamiIndex = 0;
-  LOCKED_CHARACTERS.clear();
-  for (const name of CHARACTER_NAMES) { game.affection[name] = 100; game.dates[name] = [...DATE_LEVELS]; }
+  for (const name of CHARACTER_NAMES) {
+    if (LOCKED_CHARACTERS.has(name)) continue;
+    game.affection[name] = 100;
+    game.dates[name] = [...DATE_LEVELS];
+  }
   saveGame();
   renderRoom();
   renderCharacterList();
-  showToast("密技啟動！三位角色好感度與所有回想已解鎖");
+  showToast("密技啟動！已開放角色的好感度與所有回想已解鎖");
   playSfx("positive");
 }
 
@@ -249,7 +256,7 @@ function renderCharacterList() {
         data-character="${name}"
         aria-label="${locked ? `${name}，未開放` : name}"
         style="--accent:${data.accent};${data.roomImage ? `--card-room-image:url('${data.roomImage}')` : ""}">
-        <span class="relationship-status ${locked ? "unavailable" : ""}">${locked ? "🔒 未開放" : `${status.emoji} ${status.text}`}</span>
+        <span class="relationship-status">${locked ? "🔒 未開放" : `${status.emoji} ${status.text}`}</span>
         <h3>${name}</h3>
         <div class="affection-bar"><span style="width:${value}%"></span></div>
         <p>${value} / 100</p>
@@ -266,9 +273,18 @@ function renderRoom() {
   const name = game.current;
   const data = CHARACTERS[name];
   const locked = LOCKED_CHARACTERS.has(name);
+  const roomStyle = [
+    `--room:${data.room}`,
+    `--glow:${data.glow}`,
+    `--hair:${data.hair}`,
+    `--dress:${data.dress}`,
+    `--skin:${data.skin}`,
+    `--portrait-height:${data.portraitHeight ?? 520}px`,
+    data.roomImage ? `--room-image:url('${data.roomImage}')` : ""
+  ].filter(Boolean).join(";");
   dialogueState = "idle";
   $("#room").innerHTML = `
-    <div class="room" style="--room:${data.room};--glow:${data.glow};--hair:${data.hair};--dress:${data.dress};--skin:${data.skin};${data.roomImage ? `--room-image:url('${data.roomImage}')` : ""}">
+    <div class="room" style="${roomStyle}">
       <div id="toast" class="toast"></div>
       <div class="avatar-area" id="avatar-area">
         ${data.expressions
@@ -277,7 +293,7 @@ function renderRoom() {
       </div>
       <div class="dialogue-box" id="dialogue-box">
         <div class="speaker" id="speaker">${name}</div>
-        <div class="dialogue-line" id="dialogue-line">${locked ? "未開放" : data.opening}</div>
+        <div class="dialogue-line" id="dialogue-line">${data.opening}</div>
         <div id="choice-list" class="choice-list">
           <button id="talk-button" class="choice start-dialogue ${locked ? "unavailable" : ""}" ${locked ? "disabled" : ""}>${locked ? "未開放" : "開始對話"}</button>
         </div>
@@ -396,18 +412,30 @@ function openDate(name, level, memoryMode) {
 
   document.body.insertAdjacentHTML("beforeend", `
     <div class="overlay" id="date-overlay" style="--cg-glow:${data.glow};--cg-dark:${data.room}">
-      <section class="modal-panel">
-        <button class="button button-quiet close-button" id="close-date">關閉</button>
-        <p class="eyebrow">${name} · ${memoryMode ? "回想" : "外出事件"}</p>
-        <h2>${scene.title}</h2>
-        <div class="date-cg">${scene.cg ? `<img src="${scene.cg}" alt="${scene.title}">` : "CG 佔位圖"}</div>
-        <div class="date-story">${paragraphs}</div>
-        ${memoryMode ? "" : '<button class="button button-primary" id="finish-date">結束外出</button>'}
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="date-title">
+        <button class="button button-quiet close-button" id="close-date"
+          type="button" aria-label="關閉事件" title="關閉">×</button>
+        <div class="modal-content">
+          <header class="modal-heading">
+            <p class="eyebrow">${name} · ${memoryMode ? "回想" : "外出事件"}</p>
+            <h2 id="date-title">${scene.title}</h2>
+          </header>
+          <div class="date-cg">${scene.cg ? `<img src="${scene.cg}" alt="${scene.title}">` : "CG 佔位圖"}</div>
+          <div class="date-story">${paragraphs}</div>
+          ${memoryMode ? "" : '<button class="button button-primary" id="finish-date">結束外出</button>'}
+        </div>
       </section>
     </div>
   `);
 
-  $("#close-date").addEventListener("click", () => $("#date-overlay").remove());
+  const dateOverlay = $("#date-overlay");
+  const closeDate = () => dateOverlay.remove();
+  $("#close-date").addEventListener("click", closeDate);
+  dateOverlay.addEventListener("click", (event) => {
+    if (event.target !== dateOverlay) return;
+    playSfx("click");
+    closeDate();
+  });
   if (!memoryMode) {
     $("#finish-date").addEventListener("click", () => {
       if (!game.dates[name].includes(level)) game.dates[name].push(level);
@@ -421,20 +449,27 @@ function openDate(name, level, memoryMode) {
 }
 
 function renderMemory() {
-  $("#memory-list").innerHTML = CHARACTER_NAMES.flatMap((name) => (
-    DATE_LEVELS.map((level, index) => {
+  $("#memory-list").innerHTML = CHARACTER_NAMES.flatMap((name) => {
+    if (LOCKED_CHARACTERS.has(name)) {
+      return [`
+        <article class="memory-card locked">
+          <b>${name}</b>
+          <p>未開放</p>
+        </article>
+      `];
+    }
+    return DATE_LEVELS.map((level, index) => {
       const scene = DATE_SCENES[name][index];
-      const lockedCharacter = LOCKED_CHARACTERS.has(name);
-      const unlocked = !lockedCharacter && game.dates[name].includes(level);
+      const unlocked = game.dates[name].includes(level);
       return `
         <article class="memory-card ${unlocked ? "" : "locked"}">
           <b>${name}｜${scene.title}</b>
-          <p>${lockedCharacter ? "未開放" : unlocked ? "已解鎖" : `${level} 解鎖`}</p>
+          <p>${unlocked ? "已解鎖" : `${level} 解鎖`}</p>
           ${unlocked ? `<button class="button button-quiet" data-memory="${name}|${level}">查看劇情</button>` : ""}
         </article>
       `;
-    })
-  )).join("");
+    });
+  }).join("");
 
   document.querySelectorAll("[data-memory]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -486,7 +521,14 @@ $("#memory-button").addEventListener("click", () => {
   renderMemory();
   $("#memory-overlay").classList.remove("hidden");
 });
-$("#close-memory").addEventListener("click", () => $("#memory-overlay").classList.add("hidden"));
+const memoryOverlay = $("#memory-overlay");
+const closeMemory = () => memoryOverlay.classList.add("hidden");
+$("#close-memory").addEventListener("click", closeMemory);
+memoryOverlay.addEventListener("click", (event) => {
+  if (event.target !== memoryOverlay) return;
+  playSfx("click");
+  closeMemory();
+});
 $("#reset-button").addEventListener("click", () => {
   if (!confirm("確定要清除目前進度嗎？")) return;
   localStorage.removeItem(SAVE_KEY);
