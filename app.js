@@ -160,6 +160,22 @@ function saveGame() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(game));
 }
 
+const KONAMI_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+let konamiIndex = 0;
+function handleKonamiCode(event) {
+  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  if (key !== KONAMI_CODE[konamiIndex]) { konamiIndex = key === KONAMI_CODE[0] ? 1 : 0; return; }
+  if (++konamiIndex !== KONAMI_CODE.length) return;
+  konamiIndex = 0;
+  LOCKED_CHARACTERS.clear();
+  for (const name of CHARACTER_NAMES) { game.affection[name] = 100; game.dates[name] = [...DATE_LEVELS]; }
+  saveGame();
+  renderRoom();
+  renderCharacterList();
+  showToast("密技啟動！三位角色好感度與所有回想已解鎖");
+  playSfx("positive");
+}
+
 function relationKey(name = game.current) {
   const value = game.affection[name];
   if (value < 30) return "distant";
@@ -445,6 +461,7 @@ function setupSwipeNavigation() {
 }
 
 normalizeState();
+document.addEventListener("keydown", handleKonamiCode);
 renderRoom();
 renderCharacterList();
 setupSwipeNavigation();
