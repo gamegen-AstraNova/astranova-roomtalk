@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AstraNova｜RoomTalk</title>
+  <link rel="stylesheet" href="styles.css?v=33">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">AstraNova</p>
+        <h1>RoomTalk</h1>
+      </div>
+      <div class="header-actions">
+        <button class="button button-quiet audio-toggle" id="bgm-button"
+          type="button" aria-label="關閉背景音樂" aria-pressed="true" title="背景音樂：開啟">
+          <span class="audio-toggle-icon" aria-hidden="true">🎵</span>
+        </button>
+        <button class="button button-quiet audio-toggle" id="sfx-button"
+          type="button" aria-label="關閉音效" aria-pressed="true" title="音效：開啟">
+          <span class="audio-toggle-icon" aria-hidden="true">🔊</span>
+        </button>
+        <button class="button button-quiet" id="memory-button">回想</button>
+        <button class="button button-quiet" id="reset-button">重置</button>
+      </div>
+    </header>
+
+    <div class="game-layout">
+      <aside class="character-panel">
+        <h2>選擇房間</h2>
+        <div id="character-list" class="character-list"></div>
+        <p class="helper-text">點擊角色卡片切換房間，點擊角色或選項開始對話。</p>
+      </aside>
+
+      <section id="room" class="room-stage"></section>
+    </div>
+  </main>
+
+  <div id="memory-overlay" class="overlay hidden">
+    <section class="modal-panel">
+      <button class="button button-quiet close-button" id="close-memory">關閉</button>
+      <p class="eyebrow">MEMORY</p>
+      <h2>外出回想</h2>
+      <p class="helper-text">完成過的外出事件會永久收錄在這裡。</p>
+      <div id="memory-list" class="memory-list"></div>
+    </section>
+  </div>
+
+  <audio id="bgm" src="assets/audio/AstraNova-BGM.mp3?v=1" loop preload="auto"></audio>
+
+  <script src="data.js?v=14"></script>
+  <script src="content-asteria.js?v=5"></script>
+  <script src="content-nyx.js?v=5"></script>
+  <script src="content-lumi.js?v=5"></script>
+  <script src="app.js?v=20"></script>
+</body>
+</html>
