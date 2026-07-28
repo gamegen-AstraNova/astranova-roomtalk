@@ -47,20 +47,21 @@ const CHARACTERS = {
     accent: "#d18b42",
     room: "#302515",
     glow: "#ffcf72",
+    roomImage: "assets/backgrounds/rooms/Lumi-房間.png?v=1",
     hair: "#eff5ff",
     dress: "#e6e9f3",
     skin: "#f4d0bd",
-    portraitHeight: 760,
-    opening: "......。",
+    portraitHeight: 774,
+    opening: "……來了？坐。",
     expressions: {
-      "待機": "assets/characters/lumi/Lumi-待機.png?v=2",
-      "喜": "assets/characters/lumi/Lumi-待機.png?v=2",
-      "怒": "assets/characters/lumi/Lumi-待機.png?v=2",
-      "哀": "assets/characters/lumi/Lumi-待機.png?v=2",
-      "樂": "assets/characters/lumi/Lumi-待機.png?v=2",
-      "羞": "assets/characters/lumi/Lumi-待機.png?v=2",
-      "驚": "assets/characters/lumi/Lumi-待機.png?v=2",
-      "思考": "assets/characters/lumi/Lumi-待機.png?v=2"
+      "待機": "assets/characters/lumi/Lumi-待機.png?v=3",
+      "喜": "assets/characters/lumi/Lumi-喜.png?v=3",
+      "怒": "assets/characters/lumi/Lumi-怒.png?v=3",
+      "哀": "assets/characters/lumi/Lumi-哀.png?v=3",
+      "樂": "assets/characters/lumi/Lumi-樂.png?v=3",
+      "羞": "assets/characters/lumi/Lumi-羞.png?v=3",
+      "驚": "assets/characters/lumi/Lumi-驚.png?v=3",
+      "思考": "assets/characters/lumi/Lumi-思考.png?v=3"
     }
   }
 };

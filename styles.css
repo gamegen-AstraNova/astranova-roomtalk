@@ -277,11 +277,6 @@ h1 {
   -webkit-backdrop-filter: blur(12px);
 }
 
-.character-card.is-locked .relationship-status {
-  color: var(--muted);
-  background: #ffffffc7;
-}
-
 .affection-bar {
   height: 7px;
   margin-top: 15px;
@@ -508,16 +503,6 @@ h1 {
   transform: translateY(-1px);
 }
 
-.choice.unavailable:disabled {
-  cursor: not-allowed;
-  color: var(--muted);
-  background: var(--dialogue-glass);
-  box-shadow: 0 8px 20px #6d637d14, inset 0 1px #ffffffd9;
-  filter: grayscale(.45);
-  opacity: .78;
-  transform: none;
-}
-
 .choice strong {
   display: block;
   margin-bottom: 2px;
@@ -577,7 +562,10 @@ h1 {
 .date-cg {
   display: grid;
   place-items: center;
-  height: 230px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  max-height: 44vh;
   margin: 18px 0;
   overflow: hidden;
   border: 1px solid #ffffffdf;
@@ -589,9 +577,10 @@ h1 {
 }
 
 .date-cg img {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .date-story { color: var(--ink); line-height: 1.85; }

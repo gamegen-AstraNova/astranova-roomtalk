@@ -4,7 +4,6 @@ const SFX_SETTING_KEY = "astranova-sfx-enabled";
 const SFX_VOLUME_MULTIPLIER = 4;
 const RELATION_KEYS = ["distant", "familiar", "intimate"];
 const CHARACTER_NAMES = Object.keys(CHARACTERS);
-const LOCKED_CHARACTERS = new Set(["Lumi"]);
 const EXPRESSION_ANIMATIONS = {
   "待機": "emotion-idle",
   "喜": "emotion-happy",
@@ -153,10 +152,6 @@ function normalizeState() {
     game.dates[name] ||= [];
     game.used[name] ||= {};
     for (const relation of RELATION_KEYS) game.used[name][relation] ||= [];
-    if (!LOCKED_CHARACTERS.has(name)) continue;
-    game.affection[name] = 0;
-    game.dates[name] = [];
-    for (const relation of RELATION_KEYS) game.used[name][relation] = [];
   }
 }
 
@@ -171,16 +166,8 @@ function handleKonamiCode(event) {
   if (key !== KONAMI_CODE[konamiIndex]) { konamiIndex = key === KONAMI_CODE[0] ? 1 : 0; return; }
   if (++konamiIndex !== KONAMI_CODE.length) return;
   konamiIndex = 0;
-  for (const name of CHARACTER_NAMES) {
-    if (LOCKED_CHARACTERS.has(name)) continue;
-    game.affection[name] = 100;
-    game.dates[name] = [...DATE_LEVELS];
-  }
-  saveGame();
-  renderRoom();
-  renderCharacterList();
-  showToast("密技啟動！已開放角色的好感度與所有回想已解鎖");
-  playSfx("positive");
+  for (const name of CHARACTER_NAMES) { game.affection[name] = 100; game.dates[name] = [...DATE_LEVELS]; }
+  saveGame(); renderRoom(); renderCharacterList(); showToast("密技啟動！三位角色好感度與所有回想已解鎖"); playSfx("positive");
 }
 
 function relationKey(name = game.current) {
@@ -250,13 +237,11 @@ function renderCharacterList() {
     const data = CHARACTERS[name];
     const value = game.affection[name];
     const status = relationshipStatus(value);
-    const locked = LOCKED_CHARACTERS.has(name);
     return `
-      <button class="character-card ${name === game.current ? "active" : ""} ${locked ? "is-locked" : ""}"
+      <button class="character-card ${name === game.current ? "active" : ""}"
         data-character="${name}"
-        aria-label="${locked ? `${name}，未開放` : name}"
         style="--accent:${data.accent};${data.roomImage ? `--card-room-image:url('${data.roomImage}')` : ""}">
-        <span class="relationship-status">${locked ? "🔒 未開放" : `${status.emoji} ${status.text}`}</span>
+        <span class="relationship-status">${status.emoji} ${status.text}</span>
         <h3>${name}</h3>
         <div class="affection-bar"><span style="width:${value}%"></span></div>
         <p>${value} / 100</p>
@@ -272,7 +257,6 @@ function renderCharacterList() {
 function renderRoom() {
   const name = game.current;
   const data = CHARACTERS[name];
-  const locked = LOCKED_CHARACTERS.has(name);
   const roomStyle = [
     `--room:${data.room}`,
     `--glow:${data.glow}`,
@@ -295,12 +279,12 @@ function renderRoom() {
         <div class="speaker" id="speaker">${name}</div>
         <div class="dialogue-line" id="dialogue-line">${data.opening}</div>
         <div id="choice-list" class="choice-list">
-          <button id="talk-button" class="choice start-dialogue ${locked ? "unavailable" : ""}" ${locked ? "disabled" : ""}>${locked ? "未開放" : "開始對話"}</button>
+          <button id="talk-button" class="choice start-dialogue">開始對話</button>
         </div>
       </div>
     </div>
   `;
-  if (!locked) $("#talk-button").addEventListener("click", startDialogue);
+  $("#talk-button").addEventListener("click", startDialogue);
   $("#avatar-area").addEventListener("click", handleDialogueSurfaceClick);
   $("#dialogue-box").addEventListener("click", (event) => {
     if (event.target.closest("button")) return;
@@ -309,7 +293,6 @@ function renderRoom() {
 }
 
 function handleDialogueSurfaceClick() {
-  if (LOCKED_CHARACTERS.has(game.current)) return;
   if (dialogueState === "finished") {
     playSfx("click");
     renderRoom();
@@ -343,7 +326,6 @@ function switchCharacter(name) {
 }
 
 function startDialogue() {
-  if (LOCKED_CHARACTERS.has(game.current)) return;
   const level = pendingDate();
   if (level) {
     openDate(game.current, level, false);
@@ -405,9 +387,15 @@ function finishScene(index) {
 }
 
 function openDate(name, level, memoryMode) {
-  if (LOCKED_CHARACTERS.has(name)) return;
   const scene = DATE_SCENES[name][DATE_LEVELS.indexOf(level)];
   const data = CHARACTERS[name];
+  const sceneCg = scene.cg || (name === "Nyx" ? {
+     "街頭補給": "assets/events/nyx/Nyx-街頭補給.png?v=1",
+     "全力對戰": "assets/events/nyx/Nyx-全力對戰.png?v=1",
+     "夜間巡路": "assets/events/nyx/Nyx-夜間巡路.png?v=1",
+     "不能說的心事": "assets/events/nyx/Nyx-不能說的心事.png?v=1",
+     "最好的搭檔": "assets/events/nyx/Nyx-最好的搭檔.png?v=1"
+  }[scene.title] : "");
   const paragraphs = scene.text.map((paragraph) => `<p>${paragraph}</p>`).join("");
 
   document.body.insertAdjacentHTML("beforeend", `
@@ -420,7 +408,7 @@ function openDate(name, level, memoryMode) {
             <p class="eyebrow">${name} · ${memoryMode ? "回想" : "外出事件"}</p>
             <h2 id="date-title">${scene.title}</h2>
           </header>
-          <div class="date-cg">${scene.cg ? `<img src="${scene.cg}" alt="${scene.title}">` : "CG 佔位圖"}</div>
+          <div class="date-cg">${sceneCg ? `<img src="${sceneCg}" alt="${scene.title}">` : "CG 佔位圖"}</div>
           <div class="date-story">${paragraphs}</div>
           ${memoryMode ? "" : '<button class="button button-primary" id="finish-date">結束外出</button>'}
         </div>
@@ -449,16 +437,8 @@ function openDate(name, level, memoryMode) {
 }
 
 function renderMemory() {
-  $("#memory-list").innerHTML = CHARACTER_NAMES.flatMap((name) => {
-    if (LOCKED_CHARACTERS.has(name)) {
-      return [`
-        <article class="memory-card locked">
-          <b>${name}</b>
-          <p>未開放</p>
-        </article>
-      `];
-    }
-    return DATE_LEVELS.map((level, index) => {
+  $("#memory-list").innerHTML = CHARACTER_NAMES.flatMap((name) => (
+    DATE_LEVELS.map((level, index) => {
       const scene = DATE_SCENES[name][index];
       const unlocked = game.dates[name].includes(level);
       return `
@@ -468,8 +448,8 @@ function renderMemory() {
           ${unlocked ? `<button class="button button-quiet" data-memory="${name}|${level}">查看劇情</button>` : ""}
         </article>
       `;
-    });
-  }).join("");
+    })
+  )).join("");
 
   document.querySelectorAll("[data-memory]").forEach((button) => {
     button.addEventListener("click", () => {
