@@ -389,13 +389,7 @@ function finishScene(index) {
 function openDate(name, level, memoryMode) {
   const scene = DATE_SCENES[name][DATE_LEVELS.indexOf(level)];
   const data = CHARACTERS[name];
-  const sceneCg = scene.cg || (name === "Nyx" ? {
-     "街頭補給": "assets/events/nyx/Nyx-街頭補給.png?v=1",
-     "全力對戰": "assets/events/nyx/Nyx-全力對戰.png?v=1",
-     "夜間巡路": "assets/events/nyx/Nyx-夜間巡路.png?v=1",
-     "不能說的心事": "assets/events/nyx/Nyx-不能說的心事.png?v=1",
-     "最好的搭檔": "assets/events/nyx/Nyx-最好的搭檔.png?v=1"
-  }[scene.title] : "");
+  const sceneCg = scene.cg || "";
   const paragraphs = scene.text.map((paragraph) => `<p>${paragraph}</p>`).join("");
 
   document.body.insertAdjacentHTML("beforeend", `
