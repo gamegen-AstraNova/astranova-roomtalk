@@ -166,7 +166,12 @@ function installTouchKonamiPad(feedKey) {
   let activationPointer = -1;
   let startX = 0;
   let startY = 0;
-  let consumedHold = false;
+  const listenerOptions = { capture: true, passive: false };
+  const isActivationCorner = (event) => touchLayout.matches && event.clientX <= 72 && event.clientY <= 72;
+  const blockNativeGesture = (event) => {
+    if (event.cancelable) event.preventDefault();
+    event.stopPropagation();
+  };
 
   const cancelHold = () => {
     window.clearTimeout(holdTimer);
@@ -175,7 +180,6 @@ function installTouchKonamiPad(feedKey) {
 
   function openPad() {
     if (!touchLayout.matches || document.querySelector(".touch-konami-pad")) return;
-    consumedHold = true;
     let progress = 0;
     const overlay = document.createElement("div");
     overlay.className = "touch-konami-pad";
@@ -209,26 +213,31 @@ function installTouchKonamiPad(feedKey) {
   }
 
   document.addEventListener("pointerdown", (event) => {
-    if (!touchLayout.matches || event.clientX > 72 || event.clientY > 72) return;
+    if (!isActivationCorner(event)) return;
+    blockNativeGesture(event);
     activationPointer = event.pointerId;
     startX = event.clientX;
     startY = event.clientY;
-    consumedHold = false;
     cancelHold();
     holdTimer = window.setTimeout(openPad, 1200);
-  }, true);
+  }, listenerOptions);
   document.addEventListener("pointermove", (event) => {
-    if (event.pointerId === activationPointer && Math.hypot(event.clientX - startX, event.clientY - startY) > 14) cancelHold();
-  }, true);
+    if (event.pointerId !== activationPointer) return;
+    blockNativeGesture(event);
+    if (Math.hypot(event.clientX - startX, event.clientY - startY) > 14) cancelHold();
+  }, listenerOptions);
   ["pointerup", "pointercancel"].forEach((type) => document.addEventListener(type, (event) => {
     if (event.pointerId !== activationPointer) return;
+    blockNativeGesture(event);
     cancelHold();
     activationPointer = -1;
-    if (consumedHold) { event.preventDefault(); event.stopPropagation(); }
-  }, true));
+  }, listenerOptions));
+  document.addEventListener("selectstart", (event) => {
+    if (activationPointer !== -1) blockNativeGesture(event);
+  }, listenerOptions);
   document.addEventListener("contextmenu", (event) => {
-    if (touchLayout.matches && event.clientX <= 72 && event.clientY <= 72) event.preventDefault();
-  }, true);
+    if (isActivationCorner(event)) blockNativeGesture(event);
+  }, listenerOptions);
 }
 
 const KONAMI_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
