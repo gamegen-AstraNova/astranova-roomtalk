@@ -159,15 +159,89 @@ function saveGame() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(game));
 }
 
+function installTouchKonamiPad(feedKey) {
+  const sequence = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+  const touchLayout = window.matchMedia("(max-width: 900px), (pointer: coarse)");
+  let holdTimer = 0;
+  let activationPointer = -1;
+  let startX = 0;
+  let startY = 0;
+  let consumedHold = false;
+
+  const cancelHold = () => {
+    window.clearTimeout(holdTimer);
+    holdTimer = 0;
+  };
+
+  function openPad() {
+    if (!touchLayout.matches || document.querySelector(".touch-konami-pad")) return;
+    consumedHold = true;
+    let progress = 0;
+    const overlay = document.createElement("div");
+    overlay.className = "touch-konami-pad";
+    overlay.innerHTML = `
+      <section class="touch-konami-panel" role="dialog" aria-modal="true" aria-label="Secret code input">
+        <button type="button" class="touch-konami-close" aria-label="Close">×</button>
+        <div class="touch-konami-title">SECRET INPUT</div>
+        <div class="touch-konami-progress" aria-hidden="true">${sequence.map(() => "<i></i>").join("")}</div>
+        <div class="touch-konami-controls">
+          <div class="touch-konami-dpad">
+            <button type="button" class="touch-konami-key touch-konami-up" data-konami-key="ArrowUp" aria-label="Up">↑</button>
+            <button type="button" class="touch-konami-key touch-konami-left" data-konami-key="ArrowLeft" aria-label="Left">←</button>
+            <button type="button" class="touch-konami-key touch-konami-down" data-konami-key="ArrowDown" aria-label="Down">↓</button>
+            <button type="button" class="touch-konami-key touch-konami-right" data-konami-key="ArrowRight" aria-label="Right">→</button>
+          </div>
+          <div class="touch-konami-ab"><button type="button" class="touch-konami-key" data-konami-key="b">B</button><button type="button" class="touch-konami-key" data-konami-key="a">A</button></div>
+        </div>
+      </section>`;
+    const close = () => overlay.remove();
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay || event.target.closest(".touch-konami-close")) { close(); return; }
+      const button = event.target.closest("[data-konami-key]");
+      if (!button) return;
+      const key = button.dataset.konamiKey;
+      feedKey(key);
+      progress = key === sequence[progress] ? progress + 1 : key === sequence[0] ? 1 : 0;
+      overlay.querySelectorAll(".touch-konami-progress i").forEach((dot, index) => dot.classList.toggle("on", index < progress));
+      if (progress === sequence.length) window.setTimeout(close, 420);
+    });
+    document.body.appendChild(overlay);
+  }
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!touchLayout.matches || event.clientX > 72 || event.clientY > 72) return;
+    activationPointer = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    consumedHold = false;
+    cancelHold();
+    holdTimer = window.setTimeout(openPad, 1200);
+  }, true);
+  document.addEventListener("pointermove", (event) => {
+    if (event.pointerId === activationPointer && Math.hypot(event.clientX - startX, event.clientY - startY) > 14) cancelHold();
+  }, true);
+  ["pointerup", "pointercancel"].forEach((type) => document.addEventListener(type, (event) => {
+    if (event.pointerId !== activationPointer) return;
+    cancelHold();
+    activationPointer = -1;
+    if (consumedHold) { event.preventDefault(); event.stopPropagation(); }
+  }, true));
+  document.addEventListener("contextmenu", (event) => {
+    if (touchLayout.matches && event.clientX <= 72 && event.clientY <= 72) event.preventDefault();
+  }, true);
+}
+
 const KONAMI_CODE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
 let konamiIndex = 0;
-function handleKonamiCode(event) {
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+function trackKonamiKey(key) {
   if (key !== KONAMI_CODE[konamiIndex]) { konamiIndex = key === KONAMI_CODE[0] ? 1 : 0; return; }
   if (++konamiIndex !== KONAMI_CODE.length) return;
   konamiIndex = 0;
   for (const name of CHARACTER_NAMES) { game.affection[name] = 100; game.dates[name] = [...DATE_LEVELS]; }
   saveGame(); renderRoom(); renderCharacterList(); showToast("密技啟動！三位角色好感度與所有回想已解鎖"); playSfx("positive");
+}
+function handleKonamiCode(event) {
+  trackKonamiKey(event.key.length === 1 ? event.key.toLowerCase() : event.key);
 }
 
 function relationKey(name = game.current) {
@@ -471,6 +545,7 @@ function setupSwipeNavigation() {
 
 normalizeState();
 document.addEventListener("keydown", handleKonamiCode);
+installTouchKonamiPad(trackKonamiKey);
 renderRoom();
 renderCharacterList();
 setupSwipeNavigation();
